@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaRed — Red Social Fotográfica</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- ══ API GOOGLE LOGIN (Google Identity Services) & RECAPTCHA (Req 1) ══ -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    
+    <!-- ══ FACE-API.JS: RECONOCIMIENTO Y DETECCIÓN FACIAL (Req 3 y 7) ══ -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══ PANTALLA DE BIENVENIDA Y AUTENTICACIÓN (Req 1) ══ -->
+<div class="landing-screen" id="landing-screen">
+    <div class="landing-left">
+        <span class="landing-logo">◈</span>
+    </div>
+    <div class="landing-right">
+        <span class="landing-logo-mobile">◈</span>
+        <div class="landing-hero">
+            <h1>Captura, transforma<br>y comparte momentos.</h1>
+        </div>
+        <div class="landing-actions">
+            <p class="landing-join-title">Únete hoy a la comunidad.</p>
+            
+            <!-- Botón Google Login API -->
+            <button class="btn-google" id="landing-btn-google" type="button">
+                <svg viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                </svg>
+                Continuar con Google
+            </button>
+
+            <button class="btn-landing-register" id="landing-btn-register">Crear cuenta con correo</button>
+            <div class="landing-divider"><span>o</span></div>
+            <p class="landing-have-account">¿Ya tienes cuenta?</p>
+            <button class="btn-landing-signin" id="landing-btn-signin">Iniciar sesión</button>
+        </div>
+    </div>
+</div>
+
+<div class="app-shell" id="app-shell" style="display:none">
+
+    <!-- ══ SIDEBAR IZQUIERDO ══ -->
+    <aside class="sidebar-left">
+        <a class="logo" href="#"><span class="logo-icon">◈</span></a>
+
+        <nav class="sidenav">
+            <button class="sidenav-item active" data-tab="home">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></span>
+                <span class="nav-label">Inicio</span>
+            </button>
+            <button class="sidenav-item" data-tab="explorar">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></span>
+                <span class="nav-label">Explorar</span>
+            </button>
+            <button class="sidenav-item" data-tab="notifs">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg></span>
+                <span class="nav-label">Notificaciones</span>
+            </button>
+            <button class="sidenav-item" data-tab="perfil-tab">
+                <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></span>
+                <span class="nav-label">Perfil</span>
+            </button>
+        </nav>
+
+        <button class="btn-post-big" id="btn-open-compose">
+            <span class="btn-post-big-icon">+</span>
+            <span class="btn-post-big-label">Publicar Foto</span>
+        </button>
+
+        <div class="sidebar-session" id="sidebar-session" style="display:none">
+            <div class="session-avatar-wrap" id="session-avatar-wrap">
+                <img class="session-avatar-img" id="session-avatar-img" src="" alt="" style="display:none">
+                <div class="session-avatar" id="session-avatar-icon">?</div>
+            </div>
+            <div class="session-info">
+                <strong id="session-name-side">—</strong>
+                <small id="session-username-side">@—</small>
+            </div>
+            <button class="session-menu-btn" id="btn-logout-menu" title="Cerrar sesión">···</button>
+        </div>
+        <div class="sidebar-no-session" id="sidebar-no-session">
+            <button class="btn-signin" id="btn-open-signin">Iniciar sesión</button>
+        </div>
+    </aside>
+
+    <!-- ══ CONTENIDO CENTRAL ══ -->
+    <main class="feed-center">
+
+        <!-- TAB: HOME -->
+        <div id="tab-home" class="tab-pane active">
+            <header class="feed-header" style="justify-content:space-between">
+                <h1>Inicio</h1>
+                <!-- Conmutador de vista: Lista vs Cuadrícula Instagram (Req 2) -->
+                <div class="view-switcher">
+                    <button class="view-btn active" id="btn-view-feed" title="Vista Feed">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                        Feed
+                    </button>
+                    <button class="view-btn" id="btn-view-grid" title="Cuadrícula Miniaturas Instagram">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"/></svg>
+                        Instagram
+                    </button>
+                </div>
+            </header>
+
+            <div class="profile-tabs" id="home-tabs">
+                <button class="profile-tab-btn active" data-feed="todos">Para ti</button>
+                <button class="profile-tab-btn" data-feed="siguiendo">Siguiendo</button>
+            </div>
+
+            <!-- Composer integrado con Reconocimiento Facial (Req 3) -->
+            <div class="feed-composer" id="feed-composer">
+                <div class="composer-avatar-wrap">
+                    <img class="composer-avatar-img" id="feed-composer-avatar-img" src="" alt="" style="display:none">
+                    <div class="composer-avatar" id="feed-composer-avatar">?</div>
+                </div>
+                <div class="composer-body">
+                    <div class="composer-placeholder" id="composer-placeholder">¿Qué fotografía deseas compartir hoy?</div>
+                    <textarea class="composer-input" id="feed-composer-input" placeholder="Escribe un pie de foto..." rows="2" style="display:none"></textarea>
+                    
+                    <!-- Preview imagen y canvas para Face-API -->
+                    <div class="post-img-preview-wrap" id="feed-img-preview-wrap" style="display:none;position:relative">
+                        <img id="feed-img-preview" class="post-img-preview" src="" alt="Preview">
+                        <canvas id="feed-face-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></canvas>
+                        <button class="remove-img-btn" id="feed-remove-img" title="Quitar imagen">✕</button>
+                    </div>
+
+                    <!-- Banner de detección facial en tiempo real -->
+                    <div id="feed-face-banner" class="face-detect-banner" style="display:none">
+                        <span id="feed-face-status">Analizando imagen con face-api.js...</span>
+                    </div>
+
+                    <div class="composer-actions" id="composer-actions" style="display:none">
+                        <div class="composer-actions-left">
+                            <label class="composer-icon-btn" title="Subir fotografía (Sharp generará miniaturas y 3 transformaciones)" for="feed-img-input">📷 Seleccionar Foto</label>
+                            <input type="file" id="feed-img-input" accept="image/*" style="display:none">
+                        </div>
+                        <div class="composer-actions-right">
+                            <button class="btn-post-submit" id="btn-submit-post">Publicar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="feed-divider"></div>
+
+            <!-- Vista 1: Lista clásica -->
+            <div id="posts-list"></div>
+            
+            <!-- Vista 2: Cuadrícula Instagram con Miniaturas (Req 2) -->
+            <div id="instagram-grid" class="instagram-grid" style="display:none"></div>
+
+            <div class="feed-sentinel" id="posts-sentinel"></div>
+        </div>
+
+        <!-- TAB: EXPLORAR -->
+        <div id="tab-explorar" class="tab-pane">
+            <header class="feed-header"><h1>Explorar</h1></header>
+            <div class="explore-search">
+                <div class="search-box">
+                    <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    <input id="explore-search-input" type="text" placeholder="Buscar fotografías o usuarios...">
+                </div>
+            </div>
+            <div id="explore-results"></div>
+            <div class="feed-sentinel" id="explore-sentinel"></div>
+        </div>
+
+        <!-- TAB: NOTIFICACIONES -->
+        <div id="tab-notifs" class="tab-pane">
+            <header class="feed-header"><h1>Notificaciones</h1></header>
+            <div class="notif-empty">
+                <div class="notif-icon">🔔</div>
+                <h2>Nada nuevo por ahora</h2>
+                <p>Cuando alguien interactúe con tus publicaciones fotográficas, aparecerá aquí.</p>
+            </div>
+        </div>
+
+        <!-- TAB: PERFIL -->
+        <div id="tab-perfil-tab" class="tab-pane">
+            <header class="feed-header" id="perfil-header-bar" style="justify-content:flex-start;gap:12px">
+                <button class="icon-btn" id="btn-profile-back" title="Volver" style="display:none;margin-bottom:0">
+                    <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                </button>
+                <div>
+                    <h1 id="perfil-header-name">Mi Perfil</h1>
+                    <small id="perfil-header-count" style="color:var(--text-muted);font-size:.82rem"></small>
+                </div>
+            </header>
+
+            <!-- Banner / Portada -->
+            <div class="profile-banner" id="profile-banner">
+                <img id="profile-banner-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover">
+                <label class="banner-upload-btn" for="input-portada" id="banner-upload-label" style="display:none" title="Cambiar portada">📷 Cambiar portada</label>
+                <input type="file" id="input-portada" accept="image/*" style="display:none">
+            </div>
+
+            <!-- Info de perfil -->
+            <div class="profile-info-row">
+                <div class="profile-avatar-container">
+                    <div class="profile-avatar-big" id="profile-avatar-big">
+                        <img id="profile-avatar-img" src="" alt="" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover">
+                        <span id="profile-avatar-letter">?</span>
+                    </div>
+                    <label class="avatar-upload-btn" for="input-avatar" id="avatar-upload-label" style="display:none" title="Cambiar foto">📷</label>
+                    <input type="file" id="input-avatar" accept="image/*" style="display:none">
+                </div>
+                <div class="profile-meta">
+                    <h2 id="profile-fullname">—</h2>
+                    <span id="profile-username-display" class="profile-username">@—</span>
+                    <span id="profile-email" class="profile-email"></span>
+                    <span id="profile-date" class="profile-joined"></span>
+                    <div class="profile-counts">
+                        <span><strong id="profile-following-count">0</strong> Siguiendo</span>
+                        <span><strong id="profile-followers-count">0</strong> Seguidores</span>
+                    </div>
+                </div>
+                <button class="btn-follow profile-follow-btn" id="btn-profile-follow" style="display:none">Seguir</button>
+            </div>
+
+            <div class="profile-tabs" style="display:flex;justify-content:space-between;align-items:center">
+                <button class="profile-tab-btn active">Fotografías y Publicaciones</button>
+                <div class="view-switcher" style="margin-right:12px">
+                    <button class="view-btn active" id="btn-profile-view-grid" title="Cuadrícula Instagram">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"/></svg>
+                        Cuadrícula
+                    </button>
+                    <button class="view-btn" id="btn-profile-view-list" title="Lista Detallada">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                        Lista
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grilla Instagram en perfil -->
+            <div id="profile-instagram-grid" class="instagram-grid"></div>
+            <!-- Lista en perfil -->
+            <div id="profile-posts-list" style="display:none"></div>
+            <div class="feed-sentinel" id="profile-sentinel"></div>
+        </div>
+
+    </main>
+
+    <!-- ══ SIDEBAR DERECHO ══ -->
+    <aside class="sidebar-right">
+        <div class="right-search">
+            <div class="search-box">
+                <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" placeholder="Buscar en InstaRed">
+            </div>
+        </div>
+
+        <div class="right-box" id="right-register-box">
+            <h2>Nuevo en InstaRed</h2>
+            <p>Únete ahora para compartir fotografías, aplicar transformaciones automáticas y conectar.</p>
+            <button class="btn-register-right" id="btn-open-register">Crear cuenta</button>
+        </div>
+
+        <div class="right-box">
+            <h2>Estadísticas</h2>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <span class="stat-num" id="stat-users">—</span>
+                    <span class="stat-label">Fotógrafos</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-num" id="stat-pubs">—</span>
+                    <span class="stat-label">Fotografías</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-box">
+            <h2>A quién seguir</h2>
+            <div id="who-to-follow"></div>
+            <button class="btn-show-more" onclick="switchTab('explorar')">Ver más</button>
+        </div>
+    </aside>
+</div>
+
+<!-- ══ MODAL: COMPOSE FOTOGRÁFICO ══ -->
+<div class="modal-overlay" id="modal-compose" style="display:none">
+    <div class="modal-compose">
+        <div class="modal-compose-header">
+            <button class="modal-close-btn" id="modal-compose-close">✕</button>
+            <span style="font-weight:700">Nueva Fotografía</span>
+        </div>
+        <div class="modal-compose-body">
+            <div class="composer-avatar-wrap">
+                <img class="composer-avatar-img" id="modal-compose-avatar-img" src="" alt="" style="display:none">
+                <div class="composer-avatar" id="modal-compose-avatar">?</div>
+            </div>
+            <div class="compose-right">
+                <textarea id="modal-compose-text" class="compose-textarea" placeholder="Escribe un pie de foto..." rows="4"></textarea>
+                
+                <div class="post-img-preview-wrap" id="modal-img-preview-wrap" style="display:none;position:relative">
+                    <img id="modal-img-preview" class="post-img-preview" src="" alt="Preview">
+                    <canvas id="modal-face-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></canvas>
+                    <button class="remove-img-btn" id="modal-remove-img" title="Quitar imagen">✕</button>
+                </div>
+
+                <div id="modal-face-banner" class="face-detect-banner" style="display:none">
+                    <span id="modal-face-status">Analizando rostros con face-api.js...</span>
+                </div>
+
+                <div class="compose-footer">
+                    <div class="compose-footer-icons">
+                        <label class="composer-icon-btn" for="modal-img-input" title="Subir fotografía">📷 Seleccionar Foto</label>
+                        <input type="file" id="modal-img-input" accept="image/*" style="display:none">
+                    </div>
+                    <button class="btn-post-submit" id="btn-modal-submit">Publicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ MODAL: VISOR INTERACTIVO DE FOTO COMPLETA Y TRANSFORMACIONES (Req 4 y 5) ══ -->
+<div class="modal-overlay" id="modal-photo-viewer" style="display:none">
+    <div class="photo-viewer-box">
+        <!-- Sección Visual (Imagen con alternador de transformaciones y Face-API) -->
+        <div class="viewer-media-section">
+            <div class="viewer-canvas-wrap">
+                <img id="viewer-img" class="viewer-main-img" src="" alt="Fotografía en resolución completa">
+                <canvas id="viewer-face-canvas" class="viewer-face-canvas"></canvas>
+            </div>
+            
+            <!-- Barra interactiva de transformaciones creadas con Sharp -->
+            <div class="viewer-transforms-bar">
+                <button class="transform-btn active" id="btn-trans-original" title="Versión Original de Alta Resolución">
+                    🖼️ Original
+                </button>
+                <button class="transform-btn" id="btn-trans-bw" title="Transformación 1: Blanco y Negro con Sharp">
+                    🖤 Blanco y Negro
+                </button>
+                <button class="transform-btn" id="btn-trans-sepia" title="Transformación 2: Filtro Sepia Cálido">
+                    🍂 Sepia
+                </button>
+                <button class="transform-btn" id="btn-trans-scale" title="Transformación 3: Escala Reducida 50% / Filtro Artístico">
+                    📐 Escala 50%
+                </button>
+                <button class="transform-btn btn-face-detect" id="btn-trans-faces" title="Reconocimiento Facial con face-api.js">
+                    👤 Rostros (<span id="viewer-faces-count">0</span>)
+                </button>
+            </div>
+        </div>
+
+        <!-- Sección de Información, Likes y Comentarios -->
+        <div class="viewer-info-section">
+            <div class="viewer-header">
+                <div class="viewer-author" id="viewer-author-box">
+                    <div class="composer-avatar" id="viewer-author-avatar" style="width:38px;height:38px;font-size:.9rem">?</div>
+                    <div>
+                        <strong id="viewer-author-name" style="font-size:.92rem;display:block">—</strong>
+                        <small id="viewer-author-user" style="color:var(--text-muted);font-size:.8rem">@—</small>
+                    </div>
+                </div>
+                <button class="viewer-close-btn" id="viewer-close-btn" title="Cerrar">✕</button>
+            </div>
+
+            <div class="viewer-caption">
+                <p id="viewer-caption-text" style="margin-bottom:6px"></p>
+                <small id="viewer-date" style="color:var(--text-muted);font-size:.78rem"></small>
+            </div>
+
+            <div class="viewer-comments-list" id="viewer-comments-list">
+                <!-- Se llena dinámicamente -->
+            </div>
+
+            <div class="viewer-actions">
+                <div class="viewer-action-btns">
+                    <button class="icon-action like-btn" id="viewer-like-btn" title="Me gusta">
+                        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        <span id="viewer-likes-count">0</span>
+                    </button>
+                    <span id="viewer-badge-faces" class="grid-badge-faces" style="display:none">👤 Rostros identificados</span>
+                </div>
+            </div>
+
+            <div class="viewer-comment-input-area">
+                <input type="text" id="viewer-comment-input" class="search-box" style="flex:1;background:var(--bg-input);padding:10px 14px;border-radius:var(--radius-full);border:none;color:var(--text);font-size:.88rem" placeholder="Añade un comentario...">
+                <button class="btn-post-submit" id="viewer-comment-submit" style="padding:8px 16px;font-size:.85rem">Publicar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ MODAL: COMENTARIOS CLÁSICO ══ -->
+<div class="modal-overlay" id="modal-comments" style="display:none">
+    <div class="modal-comments-box">
+        <div class="modal-compose-header">
+            <button class="modal-close-btn" id="modal-comments-close">✕</button>
+            <span style="font-weight:600;font-size:.95rem">Respuestas</span>
+        </div>
+        <div class="comments-original-post" id="comments-original-post"></div>
+        <div class="comments-list" id="comments-list"></div>
+        <div class="comments-input-area">
+            <div class="composer-avatar-wrap">
+                <img class="composer-avatar-img" id="comment-composer-avatar-img" src="" alt="" style="display:none">
+                <div class="composer-avatar" id="comment-composer-avatar">?</div>
+            </div>
+            <div class="comment-input-wrap">
+                <textarea id="comment-text-input" class="compose-textarea small" placeholder="Escribe tu respuesta..." rows="2"></textarea>
+                <div style="display:flex;justify-content:flex-end;margin-top:8px">
+                    <button class="btn-post-submit" id="btn-submit-comment">Responder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ MODAL: REGISTRO CON GOOGLE LOGIN Y RECAPTCHA (Req 1) ══ -->
+<div class="modal-overlay" id="modal-register" style="display:none">
+    <div class="modal-form-box">
+        <div class="modal-compose-header">
+            <button class="modal-close-btn" id="modal-register-close">✕</button>
+            <span class="logo-icon" style="font-size:1.4rem">◈</span>
+        </div>
+        <h2 style="margin:20px 0 16px;font-size:1.4rem">Crea tu cuenta</h2>
+
+        <!-- Botón Google Login en Registro -->
+        <button class="btn-google" id="register-btn-google" type="button">
+            <svg viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            </svg>
+            Registrarse con Google
+        </button>
+
+        <div class="landing-divider" style="margin:16px auto"><span>o regístrate con correo</span></div>
+
+        <form id="form-register">
+            <div class="form-group"><input type="text"     id="r-nombre"   placeholder="Nombre completo" required></div>
+            <div class="form-group"><input type="text"     id="r-username" placeholder="@username" required></div>
+            <div class="form-group"><input type="email"    id="r-correo"   placeholder="Correo electrónico" required></div>
+            <div class="form-group"><input type="password" id="r-password" placeholder="Contraseña (mín. 6 caracteres)" minlength="6" autocomplete="new-password" required></div>
+            
+            <!-- Google reCAPTCHA Widget (Req 1) -->
+            <div class="recaptcha-wrap">
+                <div class="g-recaptcha" id="recaptcha-register" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+            </div>
+
+            <button type="submit" class="btn-post-submit full">Registrarse</button>
+        </form>
+    </div>
+</div>
+
+<!-- ══ MODAL: INICIAR SESIÓN CON GOOGLE LOGIN Y RECAPTCHA (Req 1) ══ -->
+<div class="modal-overlay" id="modal-signin" style="display:none">
+    <div class="modal-form-box">
+        <div class="modal-compose-header">
+            <button class="modal-close-btn" id="modal-signin-close">✕</button>
+            <span class="logo-icon" style="font-size:1.4rem">◈</span>
+        </div>
+        <h2 style="margin:20px 0 8px;font-size:1.4rem">Inicia sesión</h2>
+        <p style="color:var(--text-muted);font-size:.88rem;margin-bottom:20px">Ingresa a tu cuenta fotográfica</p>
+
+        <!-- Botón Google Login en Iniciar Sesión -->
+        <button class="btn-google" id="signin-btn-google" type="button">
+            <svg viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.97 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            </svg>
+            Entrar con Google
+        </button>
+
+        <div class="landing-divider" style="margin:16px auto"><span>o usa tu contraseña</span></div>
+
+        <form id="form-signin">
+            <div class="form-group"><input type="text"     id="si-identificador" placeholder="Usuario o correo" autocomplete="username" required></div>
+            <div class="form-group"><input type="password" id="si-password"      placeholder="Contraseña" autocomplete="current-password" required></div>
+            
+            <!-- Google reCAPTCHA Widget (Req 1) -->
+            <div class="recaptcha-wrap">
+                <div class="g-recaptcha" id="recaptcha-signin" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+            </div>
+
+            <button type="submit" class="btn-post-submit full">Entrar</button>
+        </form>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-top:18px;text-align:center">
+            ¿No tienes cuenta?
+            <button type="button" id="btn-signin-to-register" style="color:var(--blue);background:none;border:none;cursor:pointer;font-size:.85rem;text-decoration:underline">Crea una</button>
+        </p>
+    </div>
+</div>
+
+<!-- ══ LIGHTBOX BÁSICO (Opcional) ══ -->
+<div class="modal-overlay lightbox-overlay" id="modal-lightbox" style="display:none" onclick="closeLightbox()">
+    <img class="lightbox-img" id="lightbox-img" src="" alt="">
+</div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>
